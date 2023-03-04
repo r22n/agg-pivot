@@ -1,0 +1,27 @@
+{
+  "name": "agg-pivot",
+  "version": "1.0.0",
+  "description": "create pivot table and aggregate it.",
+  "main": "index.js",
+  "scripts": {
+    "make": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r22n/agg-pivot.git"
+  },
+  "keywords": [
+    "aggregate",
+    "pivot",
+    "table"
+  ],
+  "author": "r22n",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/r22n/agg-pivot/issues"
+  },
+  "homepage": "https://github.com/r22n/agg-pivot#readme",
+  "dependencies": {
+    "incnum": "^1.0.1"
+  }
+}
