@@ -64,7 +64,7 @@ function aggregate(table, agg) {
     };
     r.rows.map((row, rp) => r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], keys.cols[cp], sum);
-        let a = ag.zero();
+        let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = [...row, ...col].every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
             if (match) {
@@ -76,14 +76,55 @@ function aggregate(table, agg) {
             r.table[rcid] = ag.post(a);
         }
     })));
+    const wildcard = [{ name: ag.wkey, value: ag.wkey }];
+    r.rows.map((row, rp) => r.sums.map(sum => {
+        const rcid = ag.rcid(keys.rows[rp], ag.wkey, sum);
+        let a = ag.zero;
+        for (let t = 0; t < table.rows; t++) {
+            const match = row.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            if (match) {
+                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                a = ag.add(a, current, row, wildcard);
+            }
+            if (ag.postif(a, row, wildcard)) {
+                r.table[rcid] = ag.post(a);
+            }
+        }
+    }));
+    r.cols.map((col, cp) => r.sums.map(sum => {
+        const rcid = ag.rcid(ag.wkey, keys.cols[cp], sum);
+        let a = ag.zero;
+        for (let t = 0; t < table.rows; t++) {
+            const match = col.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            if (match) {
+                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                a = ag.add(a, current, wildcard, col);
+            }
+            if (ag.postif(a, wildcard, col)) {
+                r.table[rcid] = ag.post(a);
+            }
+        }
+    }));
+    r.sums.map(sum => {
+        const rcid = ag.rcid(ag.wkey, ag.wkey, sum);
+        let a = ag.zero;
+        for (let t = 0; t < table.rows; t++) {
+            const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+            a = ag.add(a, current, wildcard, wildcard);
+        }
+        if (ag.postif(a, wildcard, wildcard)) {
+            r.table[rcid] = ag.post(a);
+        }
+    });
     return r;
 }
 exports.aggregate = aggregate;
 exports.defagg = {
     add: (p, c) => p + c,
     keys: (p, c) => `${p}/${c}`,
+    wkey: '*',
     rcid: (row, col, sum) => `${row}&${col}&${sum}`,
-    zero: () => 0,
+    zero: 0,
     cast: x => {
         const r = Number(x);
         return isNaN(r) ? 0 : r;
