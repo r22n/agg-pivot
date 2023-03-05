@@ -292,14 +292,14 @@ export function aggregate<T = number>(table: Table, agg: Aggregating<T>) {
 
 
 type AggregatorInternal<T> = {
-    cast: (value: string) => T;
-    add: (prev: T, current: T, row: AggItem[], col: AggItem[]) => T;
-    postif: (sum: T, row: AggItem[], col: AggItem[]) => any;
-    post: (sum: T) => T;
-    keys: (prev: string, current: string) => string;
-    wkey: string;
-    rcid: (row: string, col: string, sum: string) => string;
-    zero: T;
+    readonly cast: (value: string) => T;
+    readonly add: (prev: T, current: T, row: AggItem[], col: AggItem[]) => T;
+    readonly postif: (sum: T, row: AggItem[], col: AggItem[]) => any;
+    readonly post: (sum: T) => T;
+    readonly keys: (prev: string, current: string) => string;
+    readonly wkey: string;
+    readonly rcid: (row: string, col: string, sum: string) => string;
+    readonly zero: T;
 };
 export const defagg: AggregatorInternal<any/*of number*/> = {
     add: (p, c) => p + c,
@@ -313,5 +313,5 @@ export const defagg: AggregatorInternal<any/*of number*/> = {
     },
     post: x => x,
     postif: () => true,
-} as const;
+};
 
