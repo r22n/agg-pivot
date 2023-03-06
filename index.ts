@@ -73,7 +73,7 @@ export function frombuf(buf: string[], headers: number): Table {
     return r;
 }
 
-export type Aggregating<T = number> = {
+export type Aggregating<T = number, U = number> = {
     /**
      * names of row in table header
      */
@@ -97,9 +97,9 @@ export type Aggregating<T = number> = {
      * 
      * @see Aggregator
      */
-    agg?: Aggregator<T>;
+    agg?: Aggregator<T, U>;
 };
-export type Aggregator<T> = {
+export type Aggregator<T, U> = {
     /**
      * fetch data point from table for aggregation.
      * 
@@ -127,7 +127,7 @@ export type Aggregator<T> = {
      * 
      * default puts as is
      */
-    post?: (sum: T) => T;
+    post?: (sum: T) => U;
     /**
      * aggregate and generate row-id, col-id
      * 
@@ -162,7 +162,7 @@ export type Aggregator<T> = {
     zero?: T;
 };
 
-export type Aggregated<T = number> = {
+export type Aggregated<U = number> = {
     /**
      * the rows distincted and emunerated table headers and values for pivot table .
      * 
@@ -188,15 +188,15 @@ export type Aggregated<T = number> = {
      * 
      * 'rcid' will be ${row-id}&${col-id}&${sum-id} if you omitted aggregator option.
      */
-    table: { [rcid in string]: T }
+    table: { [rcid in string]: U }
 };
 export type AggItem = {
     name: string;
     value: string;
 };
 
-export function aggregate<T = number>(table: Table, agg: Aggregating<T>) {
-    const r: Aggregated<T> = {
+export function aggregate<T = number, U = number>(table: Table, agg: Aggregating<T, U>) {
+    const r: Aggregated<U> = {
         rows: [],
         cols: [],
         sums: agg.sums.concat(),
@@ -221,7 +221,7 @@ export function aggregate<T = number>(table: Table, agg: Aggregating<T>) {
     });
 
 
-    const ag: AggregatorInternal<T> = Object.assign({}, defagg, agg.agg)
+    const ag: AggregatorInternal<T, U> = Object.assign({}, defagg, agg.agg)
     const keys = {
         rows: r.rows.map(x => x.map(({ value }) => value).reduce(ag.keys)),
         cols: r.cols.map(x => x.map(({ value }) => value).reduce(ag.keys)),
@@ -291,17 +291,17 @@ export function aggregate<T = number>(table: Table, agg: Aggregating<T>) {
 }
 
 
-type AggregatorInternal<T> = {
+type AggregatorInternal<T, U> = {
     readonly cast: (value: string) => T;
     readonly add: (prev: T, current: T, row: AggItem[], col: AggItem[]) => T;
     readonly postif: (sum: T, row: AggItem[], col: AggItem[]) => any;
-    readonly post: (sum: T) => T;
+    readonly post: (sum: T) => U;
     readonly keys: (prev: string, current: string) => string;
     readonly wkey: string;
     readonly rcid: (row: string, col: string, sum: string) => string;
     readonly zero: T;
 };
-export const defagg: AggregatorInternal<any/*of number*/> = {
+export const defagg: AggregatorInternal<any/*of number*/, any/*of number*/> = {
     add: (p, c) => p + c,
     keys: (p, c) => `${p}/${c}`,
     wkey: '*',

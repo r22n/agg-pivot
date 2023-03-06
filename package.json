@@ -1,6 +1,6 @@
 {
   "name": "agg-pivot",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "create pivot table and aggregate it.",
   "main": "index.js",
   "scripts": {
