@@ -58,8 +58,8 @@ function aggregate(table, agg) {
     });
     const ag = Object.assign({}, exports.defagg, agg.agg);
     const keys = {
-        rows: r.rows.map(x => x.map(({ value }) => value).reduce(ag.keys)),
-        cols: r.cols.map(x => x.map(({ value }) => value).reduce(ag.keys)),
+        rows: agg.rows.length ? r.rows.map(x => x.map(({ value }) => value).reduce(ag.keys)) : [],
+        cols: agg.cols.length ? r.cols.map(x => x.map(({ value }) => value).reduce(ag.keys)) : [],
         sums: r.sums.reduce(ag.keys)
     };
     r.rows.map((row, rp) => r.cols.map((col, cp) => r.sums.map(sum => {

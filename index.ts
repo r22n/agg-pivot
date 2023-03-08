@@ -223,8 +223,8 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
     const ag: AggregatorInternal<T, U> = Object.assign({}, defagg, agg.agg)
     const keys = {
-        rows: r.rows.map(x => x.map(({ value }) => value).reduce(ag.keys)),
-        cols: r.cols.map(x => x.map(({ value }) => value).reduce(ag.keys)),
+        rows: agg.rows.length ? r.rows.map(x => x.map(({ value }) => value).reduce(ag.keys)) : [],
+        cols: agg.cols.length ? r.cols.map(x => x.map(({ value }) => value).reduce(ag.keys)) : [],
         sums: r.sums.reduce(ag.keys)
     };
 
@@ -314,4 +314,3 @@ export const defagg: AggregatorInternal<any/*of number*/, any/*of number*/> = {
     post: x => x,
     postif: () => true,
 };
-
