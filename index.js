@@ -64,6 +64,9 @@ function aggregate(table, agg) {
     };
     r.rows.map((row, rp) => r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], keys.cols[cp], sum);
+        if (!ag.postif(row, col)) {
+            return;
+        }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = [...row, ...col].every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -72,13 +75,14 @@ function aggregate(table, agg) {
                 a = ag.add(a, current, row, col);
             }
         }
-        if (ag.postif(a, row, col)) {
-            r.table[rcid] = ag.post(a);
-        }
+        r.table[rcid] = ag.post(a);
     })));
     const wildcard = [{ name: ag.wkey, value: ag.wkey }];
     r.rows.map((row, rp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], ag.wkey, sum);
+        if (!ag.postif(row, wildcard)) {
+            return;
+        }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = row.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -86,13 +90,14 @@ function aggregate(table, agg) {
                 const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
                 a = ag.add(a, current, row, wildcard);
             }
-            if (ag.postif(a, row, wildcard)) {
-                r.table[rcid] = ag.post(a);
-            }
         }
+        r.table[rcid] = ag.post(a);
     }));
     r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(ag.wkey, keys.cols[cp], sum);
+        if (!ag.postif(wildcard, col)) {
+            return;
+        }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = col.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -100,21 +105,20 @@ function aggregate(table, agg) {
                 const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
                 a = ag.add(a, current, wildcard, col);
             }
-            if (ag.postif(a, wildcard, col)) {
-                r.table[rcid] = ag.post(a);
-            }
         }
+        r.table[rcid] = ag.post(a);
     }));
     r.sums.map(sum => {
         const rcid = ag.rcid(ag.wkey, ag.wkey, sum);
+        if (!ag.postif(wildcard, wildcard)) {
+            return;
+        }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
             a = ag.add(a, current, wildcard, wildcard);
         }
-        if (ag.postif(a, wildcard, wildcard)) {
-            r.table[rcid] = ag.post(a);
-        }
+        r.table[rcid] = ag.post(a);
     });
     return r;
 }

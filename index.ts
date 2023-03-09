@@ -115,11 +115,11 @@ export type Aggregator<T, U> = {
      */
     add?: (prev: T, current: T, row: AggItem[], col: AggItem[]) => T;
     /**
-     *  put sum value into result table if this returned true
+     * put sum value into result table if this returned true
      * 
      * default puts all sum values
      */
-    postif?: (sum: T, row: AggItem[], col: AggItem[]) => any;
+    postif?: (row: AggItem[], col: AggItem[]) => any;
     /**
      * put sum value into result table.
      * 
@@ -230,6 +230,10 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
     r.rows.map((row, rp) => r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], keys.cols[cp], sum);
+        if (!ag.postif(row, col)) {
+            return;
+        }
+
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = [...row, ...col].every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -238,15 +242,17 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
                 a = ag.add(a, current, row, col);
             }
         }
-        if (ag.postif(a, row, col)) {
-            r.table[rcid] = ag.post(a);
-        }
+        r.table[rcid] = ag.post(a);
     })));
 
     const wildcard: AggItem[] = [{ name: ag.wkey, value: ag.wkey }];
 
     r.rows.map((row, rp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], ag.wkey, sum);
+        if (!ag.postif(row, wildcard)) {
+            return;
+        }
+
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = row.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -254,14 +260,16 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
                 const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
                 a = ag.add(a, current, row, wildcard);
             }
-            if (ag.postif(a, row, wildcard)) {
-                r.table[rcid] = ag.post(a);
-            }
         }
+        r.table[rcid] = ag.post(a);
     }));
 
     r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(ag.wkey, keys.cols[cp], sum);
+        if (!ag.postif(wildcard, col)) {
+            return;
+        }
+
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const match = col.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
@@ -269,22 +277,22 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
                 const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
                 a = ag.add(a, current, wildcard, col);
             }
-            if (ag.postif(a, wildcard, col)) {
-                r.table[rcid] = ag.post(a);
-            }
         }
+        r.table[rcid] = ag.post(a);
     }));
 
     r.sums.map(sum => {
         const rcid = ag.rcid(ag.wkey, ag.wkey, sum);
+        if (!ag.postif(wildcard, wildcard)) {
+            return;
+        }
+
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
             const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
             a = ag.add(a, current, wildcard, wildcard);
         }
-        if (ag.postif(a, wildcard, wildcard)) {
-            r.table[rcid] = ag.post(a);
-        }
+        r.table[rcid] = ag.post(a);
     });
 
     return r;
@@ -294,7 +302,7 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 type AggregatorInternal<T, U> = {
     readonly cast: (value: string) => T;
     readonly add: (prev: T, current: T, row: AggItem[], col: AggItem[]) => T;
-    readonly postif: (sum: T, row: AggItem[], col: AggItem[]) => any;
+    readonly postif: (row: AggItem[], col: AggItem[]) => any;
     readonly post: (sum: T) => U;
     readonly keys: (prev: string, current: string) => string;
     readonly wkey: string;
