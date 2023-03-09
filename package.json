@@ -4,7 +4,8 @@
   "description": "create pivot table and aggregate it.",
   "main": "index.js",
   "scripts": {
-    "make": "tsc"
+    "make": "tsc",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,8 @@
   "homepage": "https://github.com/r22n/agg-pivot#readme",
   "dependencies": {
     "incnum": "^1.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
   }
 }
