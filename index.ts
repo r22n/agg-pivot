@@ -1,4 +1,5 @@
 import { seq } from 'incnum';
+import { fromary } from 'ary-index';
 
 export type Table = {
     /**
@@ -62,11 +63,12 @@ export function frombuf(buf: string[], headers: number): Table {
         r.headers.cols[name] = p;
         r.distinct[name] = {};
     });
+    const tableptr = fromary(r.table, [r.rows, r.headers.names.length]);
 
     for (const [header, row] of seq([0, 0], [r.headers.names.length, r.rows])) {
         const name = r.headers.names[header];
         const col = r.headers.cols[name];
-        const value = r.table[r.headers.names.length * row + col];
+        const value = tableptr!.get(row, col);
         r.distinct[name][value] = 1;
     }
 
@@ -206,6 +208,7 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
         rows: agg.rows.map(header => Object.keys(table.distinct[header])),
         cols: agg.cols.map(header => Object.keys(table.distinct[header])),
     };
+    const tableptr = fromary(table.table, [table.rows, table.headers.names.length]);
 
     seq(agg.rows.map(() => 0), agg.rows.map((x, p) => distinct.rows[p].length)).forEach(values => {
         r.rows.push(values.map((value, name) => ({
@@ -228,6 +231,7 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
         sums: r.sums.reduce(ag.keys)
     };
 
+
     r.rows.map((row, rp) => r.cols.map((col, cp) => r.sums.map(sum => {
         const rcid = ag.rcid(keys.rows[rp], keys.cols[cp], sum);
         if (!ag.postif(row, col)) {
@@ -236,9 +240,9 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = [...row, ...col].every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = [...row, ...col].every(({ name, value }) => tableptr!.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr!.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, row, col);
             }
         }
@@ -255,9 +259,9 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = row.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = row.every(({ name, value }) => tableptr!.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr!.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, row, wildcard);
             }
         }
@@ -272,9 +276,9 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = col.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = col.every(({ name, value }) => tableptr!.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr!.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, wildcard, col);
             }
         }
@@ -289,7 +293,7 @@ export function aggregate<T = number, U = number>(table: Table, agg: Aggregating
 
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+            const current = ag.cast(tableptr!.get(t, table.headers.cols[sum]));
             a = ag.add(a, current, wildcard, wildcard);
         }
         r.table[rcid] = ag.post(a);

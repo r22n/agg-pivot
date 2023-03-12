@@ -1,6 +1,6 @@
 {
   "name": "agg-pivot",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "create pivot table and aggregate it.",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/r22n/agg-pivot#readme",
   "dependencies": {
+    "ary-index": "^1.0.1",
     "incnum": "^1.0.5"
   },
   "devDependencies": {

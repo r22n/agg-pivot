@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defagg = exports.aggregate = exports.frombuf = void 0;
 const incnum_1 = require("incnum");
+const ary_index_1 = require("ary-index");
 /**
  * create table from raw buffer.
  *
@@ -24,10 +25,11 @@ function frombuf(buf, headers) {
         r.headers.cols[name] = p;
         r.distinct[name] = {};
     });
+    const tableptr = (0, ary_index_1.fromary)(r.table, [r.rows, r.headers.names.length]);
     for (const [header, row] of (0, incnum_1.seq)([0, 0], [r.headers.names.length, r.rows])) {
         const name = r.headers.names[header];
         const col = r.headers.cols[name];
-        const value = r.table[r.headers.names.length * row + col];
+        const value = tableptr.get(row, col);
         r.distinct[name][value] = 1;
     }
     return r;
@@ -44,6 +46,7 @@ function aggregate(table, agg) {
         rows: agg.rows.map(header => Object.keys(table.distinct[header])),
         cols: agg.cols.map(header => Object.keys(table.distinct[header])),
     };
+    const tableptr = (0, ary_index_1.fromary)(table.table, [table.rows, table.headers.names.length]);
     (0, incnum_1.seq)(agg.rows.map(() => 0), agg.rows.map((x, p) => distinct.rows[p].length)).forEach(values => {
         r.rows.push(values.map((value, name) => ({
             value: distinct.rows[name][value],
@@ -69,9 +72,9 @@ function aggregate(table, agg) {
         }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = [...row, ...col].every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = [...row, ...col].every(({ name, value }) => tableptr.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, row, col);
             }
         }
@@ -85,9 +88,9 @@ function aggregate(table, agg) {
         }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = row.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = row.every(({ name, value }) => tableptr.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, row, wildcard);
             }
         }
@@ -100,9 +103,9 @@ function aggregate(table, agg) {
         }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const match = col.every(({ name, value }) => table.table[table.headers.names.length * t + table.headers.cols[name]] === value);
+            const match = col.every(({ name, value }) => tableptr.get(t, table.headers.cols[name]) === value);
             if (match) {
-                const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+                const current = ag.cast(tableptr.get(t, table.headers.cols[sum]));
                 a = ag.add(a, current, wildcard, col);
             }
         }
@@ -115,7 +118,7 @@ function aggregate(table, agg) {
         }
         let a = ag.zero;
         for (let t = 0; t < table.rows; t++) {
-            const current = ag.cast(table.table[table.headers.names.length * t + table.headers.cols[sum]]);
+            const current = ag.cast(tableptr.get(t, table.headers.cols[sum]));
             a = ag.add(a, current, wildcard, wildcard);
         }
         r.table[rcid] = ag.post(a);
